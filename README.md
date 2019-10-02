@@ -1,10 +1,10 @@
 # traefik-swarm
-Attempt to configure a route in another swarm
+Attempt to configure a route in an adjacent swarm stack.
 
 This project brings up two Docker Swarm stacks
-- traefik  
+- **traefik**  
 contains a traefik, grafana, and influxdb container along with traefik routing labels.
-- portainer  
+- **portainer**  
 contains a portainer and portainer agent container along with routing labels
 
 The routes to the Influxdb and Grafana contaeinrs work as expected, the route to the Portainer container does not. There is a very basic start.sh script that can be used to run the test. 
@@ -48,4 +48,6 @@ cat the access log
 10.255.0.2 - - [02/Oct/2019:02:47:34 +0000] "GET /portainer HTTP/1.1" 504 15 "-" "-" 2 "portainer@docker" "http://10.255.0.141:9000" 29970ms
 ```
 
-The route to http://localhost/portainer fails
+The route to http://localhost/portainer fails. The traefik.access.log and traefik.log from this test have been added to the repo.
+
+When I tried to addin the `--providers.docker.swarmMode=true` flag to the traefik startup, pretty much nothing worked.
