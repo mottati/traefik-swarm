@@ -1,0 +1,72 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: traefik:2.0.1
+    command:
+      - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --providers.file.directory=/traefik-config
+      - --providers.file.watch=true
+      - --api.debug=true
+      - --log.filepath=/traefik.log
+      - --accesslog.filepath=/traefik.access.log
+      - --log.format=json
+    ports:
+      - "80:80"
+      - "8199:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PWD}/volumes/traefik:/traefik
+      - ${PWD}/traefik.log:/traefik.log
+      - ${PWD}/traefik.access.log:/traefik.access.log
+    networks:
+        - skylab-overlay      
+
+  influxdb:
+      image: influxdb:1.5.2
+      restart: always
+      volumes:
+          - ${PWD}/volumes/influxdb:/var/lib/influxdb
+      networks:
+          - skylab-overlay
+      labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.influxdb.rule=Host(`localhost`) && PathPrefix(`/influxdb`)"
+          - "traefik.http.routers.influxdb.entrypoints=web"
+          - "traefik.http.services.influxdb.loadbalancer.server.port=8086"
+          - "traefik.http.middlewares.influxdb-strip-prefix.stripPrefix.prefixes=/influxdb"
+          - "traefik.http.routers.influxdb.middlewares=influxdb-strip-prefix@docker"
+          
+  grafana:
+      image: grafana/grafana:5.4.3
+      environment:
+          - GF_AUTH_ANONYMOUS_ENABLED
+          - GF_SERVER_ROOT_URL
+          # Grafana - overrides the grafana.ini file
+          #   See http://docs.grafana.org/installation/configuration/#using-environment-variables
+          #   See also http://docs.grafana.org/installation/docker/#configuration
+          - GF_AUTH_ANONYMOUS_ENABLED=${GF_AUTH_ANONYMOUS_ENABLED:-true}
+          - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-%(protocol)s://%(domain)s:%(http_port)s/grafana/}
+      restart: always
+      volumes:
+          - ${PWD}/volumes/grafana:/var/lib/grafana
+      networks:
+          - skylab-overlay
+      labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.grafana.rule=Host(`localhost`) && PathPrefix(`/grafana`)"
+          - "traefik.http.routers.grafana.entrypoints=web"
+          - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+          - "traefik.http.middlewares.grafana-strip-prefix.stripPrefix.prefixes=/grafana"
+          - "traefik.http.routers.grafana.middlewares=grafana-strip-prefix@docker"
+
+networks:
+   skylab-overlay:
+        # Note: external networks are expected to exist prior to bringing this configuration up.
+        # Use: docker network create  -d overlay --attachable skylab-overlay
+        external: true
