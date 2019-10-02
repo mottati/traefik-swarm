@@ -1,0 +1,2 @@
+10.255.0.2 - - [02/Oct/2019:02:47:34 +0000] "GET /influxdb/query?q=SHOW%20DATABASES HTTP/1.1" 200 109 "-" "-" 1 "influxdb@docker" "http://10.0.10.158:8086" 6ms
+10.255.0.2 - - [02/Oct/2019:02:47:34 +0000] "GET /portainer HTTP/1.1" 504 15 "-" "-" 2 "portainer@docker" "http://10.255.0.141:9000" 29970ms
